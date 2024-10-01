@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Imágenes AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .loader {
+            display: none;
+        }
+
+        .loading .loader {
+            display: inline-block;
+        }
+
+        .loading img {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+        <h1 class="text-2xl font-bold text-center mb-6">AI Image Generator</h1>
+        <div id="imageContainer" class="mb-6 aspect-square w-full bg-gray-100 rounded-lg overflow-hidden relative">
+            <div class="flex items-center justify-center text-gray-400" id="placeholder">
+                Your image will appear here
+            </div>
+            <img id="generatedImage" src="" alt="Generated image" class="w-full h-full object-cover hidden">
+            <div class="loader" id="loader">Loading...</div>
+        </div>
+        <form id="imageForm" class="space-y-4">
+            <input type="text" id="prompt" placeholder="Enter your prompt here..."
+                class="flex h-10 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <div class="flex justify-between">
+                <button type="submit" id="generateButton"
+                    class="bg-blue-500 hover:bg-blue-600 text-white h-10 px-4 rounded-md transition duration-300 ease-in-out">
+                    Generate
+                </button>
+                <button type="button" id="downloadButton"
+                    class="bg-green-500 hover:bg-green-600 text-white h-10 px-4 rounded-md transition duration-300 ease-in-out"
+                    disabled>
+                    Download
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('imageForm');
+        const promptInput = document.getElementById('prompt');
+        const imageContainer = document.getElementById('imageContainer');
+        const generatedImage = document.getElementById('generatedImage');
+        const loader = document.getElementById('loader');
+        const downloadButton = document.getElementById('downloadButton');
+        const placeholder = document.getElementById('placeholder');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const prompt = promptInput.value;
+            if (!prompt) return;
+
+            loader.style.display = 'inline-block';
+            placeholder.style.display = 'none';
+            generatedImage.classList.add('hidden');
+
+            try {
+                const imageUri = await getImageUri(prompt);
+                if (imageUri) {
+                    generatedImage.src = imageUri;
+                    generatedImage.classList.remove('hidden');
+                    downloadButton.disabled = false;
+                }
+            } catch (error) {
+                console.error("Error fetching image:", error);
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+
+        async function getImageUri(text) {
+            const url = `https://cors-anywhere.herokuapp.com/https://magicloops.dev/api/loop/run/ce21d74d-0ec7-4d9d-a5f5-eec60964aadd?input=${text}`;
+            const response = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Origin': 'http://localhost:5173' // Cambia esto según tu configuración
+                }
+            });
+            const data = await response.json();
+            return data.loopOutput;
+        }
+
+        downloadButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = generatedImage.src;
+            link.setAttribute('download', 'generated-image.png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+
+</html>
